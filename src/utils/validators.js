@@ -13,7 +13,7 @@ function validate(req, res, next) {
 const signupValidationRules = [
   body('username').trim().isLength({ min: 3, max: 30 }).withMessage('Username must be 3-30 characters'),
   body('email').isEmail().normalizeEmail().withMessage('A valid email is required'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
   body('telegramUsername').optional({ checkFalsy: true }).trim().isLength({ max: 50 }),
   body('referralCode').optional({ checkFalsy: true }).trim().isLength({ max: 20 }),
 ];

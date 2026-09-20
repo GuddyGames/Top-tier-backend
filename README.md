@@ -126,9 +126,11 @@ Health check: `GET http://localhost:5000/health` → `{"status":"ok"}`
 | GET    | `/api/tasks/:id/submissions`    | ✅ admin    | —                                                         |
 | PATCH  | `/api/tasks/submissions/:id`    | ✅ admin    | `{ status: "approved" \| "rejected" }`                   |
 | GET    | `/api/demo/prices`              | —          | current simulated instrument prices                       |
+| GET    | `/api/demo/prices/:symbol/candles` | —       | `?hours=4&interval=1` (interval in minutes: 1/5/15/60)     |
 | GET    | `/api/demo/account`             | ✅          | virtual balance + open positions (auto-created)           |
+| GET    | `/api/demo/performance`         | ✅          | win rate, total P&L, recent trades — for the Home page    |
 | GET    | `/api/demo/trades`              | ✅          | the caller's trade history                                |
-| POST   | `/api/demo/trades`              | ✅          | `{ symbol, side: "buy"\|"sell", size }`                   |
+| POST   | `/api/demo/trades`              | ✅          | `{ symbol, side: "buy"\|"sell", size, stopLoss?, takeProfit? }` |
 | POST   | `/api/demo/trades/:id/close`    | ✅          | closes at the current simulated price                     |
 | GET    | `/api/admin/users`              | ✅ admin    | `?search=&limit=50&offset=0`                              |
 | GET    | `/api/admin/users/:id`          | ✅ admin    | full profile + activity + demo-trading summary            |
@@ -156,7 +158,31 @@ curl -X POST http://localhost:5000/api/activity \
   -d '{"actionType":"post_created"}'
 ```
 
-## 4. Notes for the frontend dev
+## 4. Security
+
+What's in place:
+- Passwords hashed with bcrypt (10 rounds); never returned in any response
+- JWT auth, `JWT_SECRET` required — the server refuses to boot without it
+- `/api/auth/signup` and `/api/auth/login` are rate-limited (20 requests /
+  15 min / IP) — without this, nothing stops password-guessing or signup spam
+- `helmet()` sets standard security headers
+- CORS is an explicit allow-list from `ALLOWED_ORIGINS`; with none set, it
+  fails closed in production (blocks cross-origin) rather than opening to `*`
+- Every query goes through parameterized `pg` calls — no string-built SQL,
+  so no SQL injection surface
+- Admin routes (`/api/admin/*`) require both a valid token and `role = 'admin'`
+- JSON body size capped at 100kb
+
+Worth doing before this handles real users at scale:
+- Add refresh tokens / shorter JWT expiry — a stolen 7-day token is valid
+  for 7 days with no revocation mechanism right now
+- Add a password-reset flow (there isn't one yet)
+- Consider logging failed login attempts per-account, not just per-IP,
+  since rate limiting alone won't catch a slow distributed attempt
+- Put the Postgres connection behind Supabase's pooler (port 6543) once
+  you're running multiple backend instances, to avoid exhausting connections
+
+## 5. Notes for the frontend dev
 - CORS is locked to `ALLOWED_ORIGINS` in `.env` — add their dev URL there.
 - The leaderboard and dashboard endpoints are public (no auth) since
   they're meant to be displayed openly; flip that in the route files
@@ -165,7 +191,7 @@ curl -X POST http://localhost:5000/api/activity \
   before that it's `null`. The leaderboard endpoint itself always
   sorts live by `total_points`, so it's correct regardless.
 
-## 5. Project structure
+## 6. Project structure
 ```
 src/
 ├── app.js              Express app + middleware wiring

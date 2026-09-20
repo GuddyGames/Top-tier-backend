@@ -95,8 +95,13 @@ INSERT INTO demo_symbol_prices (symbol, price) VALUES
     ('EUR/USD', 1.08500),
     ('GBP/USD', 1.27000),
     ('USD/JPY', 149.500),
+    ('AUD/USD', 0.65500),
+    ('USD/CAD', 1.37000),
+    ('XAU/USD', 2650.00),
+    ('XAG/USD', 31.50),
     ('BTC/USD', 62000.00),
-    ('ETH/USD', 3400.00)
+    ('ETH/USD', 3400.00),
+    ('SOL/USD', 145.00)
 ON CONFLICT (symbol) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS demo_trades (

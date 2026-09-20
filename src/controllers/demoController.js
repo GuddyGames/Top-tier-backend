@@ -11,12 +11,14 @@ const getPrices = asyncHandler(async (req, res) => {
   res.json({ prices });
 });
 
-// GET /api/demo/prices/:symbol/candles?hours=4 — public, 1-minute OHLC candles
+// GET /api/demo/prices/:symbol/candles?hours=4&interval=1 — public, OHLC candles.
+// interval is the candle size in minutes (1, 5, 15, 60 map to 1m/5m/15m/1H).
 const getCandles = asyncHandler(async (req, res) => {
   const symbol = decodeURIComponent(req.params.symbol);
-  const hours = Math.min(parseInt(req.query.hours, 10) || 4, 24);
-  const candles = await DemoPriceHistory.getCandles(symbol, hours);
-  res.json({ symbol, candles });
+  const intervalMinutes = Math.min(Math.max(parseInt(req.query.interval, 10) || 1, 1), 240);
+  const hours = Math.min(parseInt(req.query.hours, 10) || 4, 24 * 14); // cap lookback at 14 days
+  const candles = await DemoPriceHistory.getCandles(symbol, { hours, intervalMinutes });
+  res.json({ symbol, interval: intervalMinutes, candles });
 });
 
 // GET /api/demo/account — auth. Creates the account on first visit.

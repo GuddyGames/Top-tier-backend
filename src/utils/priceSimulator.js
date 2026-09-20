@@ -13,8 +13,13 @@ const VOLATILITY = {
   'EUR/USD': 0.00035,
   'GBP/USD': 0.00035,
   'USD/JPY': 0.0004,
+  'AUD/USD': 0.00035,
+  'USD/CAD': 0.00035,
+  'XAU/USD': 0.0006,
+  'XAG/USD': 0.001,
   'BTC/USD': 0.004,
   'ETH/USD': 0.005,
+  'SOL/USD': 0.008,
 };
 
 function randomWalk(price, vol) {
