@@ -5,6 +5,7 @@ const Activity = require('../models/Activity');
 const POINTS = require('../config/points');
 const { generateReferralCode } = require('../utils/referralCode');
 const asyncHandler = require('../utils/asyncHandler');
+const { computeStreak } = require('../utils/streak');
 
 const SALT_ROUNDS = 10;
 
@@ -75,6 +76,15 @@ const login = asyncHandler(async (req, res) => {
 
   const valid = await bcrypt.compare(password, user.password_hash);
   if (!valid) return res.status(401).json({ error: 'Invalid email or password' });
+
+  // Award the daily login bonus once per calendar day.
+  if (!user.last_active_date || new Date(user.last_active_date).toISOString().slice(0, 10) !== new Date().toISOString().slice(0, 10)) {
+    await Activity.log({ userId: user.id, actionType: 'login', points: POINTS.login });
+    await User.addPoints(user.id, POINTS.login);
+    const fresh = await User.findById(user.id);
+    const result = computeStreak({ lastActiveDate: fresh.last_active_date, currentStreak: fresh.current_streak, longestStreak: fresh.longest_streak });
+    await User.updateStreak(user.id, result);
+  }
 
   const token = signToken(user);
   res.json({
