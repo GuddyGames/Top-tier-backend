@@ -8,6 +8,7 @@ if (!process.env.JWT_SECRET) {
 const app = require('./app');
 const { scheduleDailyRankJob } = require('./jobs/dailyRankJob');
 const { schedulePriceTickJob } = require('./jobs/priceTickJob');
+const { configureTelegramWebhook } = require('./controllers/telegramController');
 
 const PORT = process.env.PORT || 5000;
 
@@ -15,4 +16,5 @@ app.listen(PORT, () => {
   console.log(`Leaderboard backend running on port ${PORT}`);
   scheduleDailyRankJob();
   schedulePriceTickJob();
+  configureTelegramWebhook();
 });
