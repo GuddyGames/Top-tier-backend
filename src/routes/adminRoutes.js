@@ -1,6 +1,7 @@
 const express = require('express');
 const {
   listUsers,
+  listReferrals,
   getUserDetail,
   updateUserStatus,
   updateUserProfile,
@@ -25,6 +26,7 @@ const router = express.Router();
 router.use(requireAuth, requireAdmin);
 
 router.get('/users', listUsers);
+router.get('/referrals', listReferrals);
 router.get('/users/:id', getUserDetail);
 router.patch('/users/:id', adminProfileEditValidationRules, validate, updateUserProfile);
 router.patch('/users/:id/status', updateUserStatus);
