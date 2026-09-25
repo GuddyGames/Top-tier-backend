@@ -3,6 +3,7 @@ const TaskSubmission = require('../models/TaskSubmission');
 const User = require('../models/User');
 const Activity = require('../models/Activity');
 const asyncHandler = require('../utils/asyncHandler');
+const { uploadProof, createSignedUrl, deleteProof } = require('../utils/taskProofStorage');
 
 // GET /api/tasks — public, active tasks only
 const listTasks = asyncHandler(async (req, res) => {
@@ -36,11 +37,10 @@ const submitTask = asyncHandler(async (req, res) => {
   const existing = await TaskSubmission.findExisting(taskId, req.user.id);
   if (existing) return res.status(409).json({ error: 'You already submitted this task', submission: existing });
 
-  const submission = await TaskSubmission.create({
-    taskId,
-    userId: req.user.id,
-    proofUrl: req.body.proofUrl,
-  });
+  let proofUrl = req.body.proofUrl || null;
+  if (req.file) proofUrl = await uploadProof({ userId: req.user.id, taskId, file: req.file });
+
+  const submission = await TaskSubmission.create({ taskId, userId: req.user.id, proofUrl });
 
   res.status(201).json({ submission });
 });
@@ -77,6 +77,10 @@ const reviewSubmission = asyncHandler(async (req, res) => {
     const task = await Task.findById(submission.task_id);
     await Activity.log({ userId: submission.user_id, actionType: 'task_completed', points: task.points });
     await User.addPoints(submission.user_id, task.points);
+  }
+
+  if (submission.proof_url && !/^https?:\\/\\//i.test(submission.proof_url)) {
+    await deleteProof(submission.proof_url).catch(() => {});
   }
 
   res.json({ submission: updated });
