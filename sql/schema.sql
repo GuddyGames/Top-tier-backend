@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     points          INTEGER NOT NULL,
     created_by      INTEGER REFERENCES users(id) ON DELETE SET NULL,
     is_active       BOOLEAN NOT NULL DEFAULT true,
+    task_date       DATE NOT NULL DEFAULT CURRENT_DATE,
     created_at      TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
