@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     description     TEXT,
     link            TEXT,               -- URL of the post to engage with
     points          INTEGER NOT NULL,
+    task_type       VARCHAR(20) NOT NULL DEFAULT 'manual', -- manual | telegram
     created_by      INTEGER REFERENCES users(id) ON DELETE SET NULL,
     is_active       BOOLEAN NOT NULL DEFAULT true,
     task_date       DATE NOT NULL DEFAULT CURRENT_DATE,
