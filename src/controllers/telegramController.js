@@ -1,6 +1,9 @@
 const crypto = require('crypto');
 const User = require('../models/User');
 const db = require('../config/db');
+const Task = require('../models/Task');
+const TaskSubmission = require('../models/TaskSubmission');
+const Activity = require('../models/Activity');
 const asyncHandler = require('../utils/asyncHandler');
 
 const CHANNEL_USERNAME = process.env.TELEGRAM_CHANNEL_USERNAME || '@Toptiertradingchannel';
@@ -78,6 +81,22 @@ const getVerificationStatus = asyncHandler(async (req, res) => {
   });
 });
 
+async function awardTelegramTasks(userId, telegramUserId) {
+  const tasks = await Task.listActiveTelegram();
+  const POINTS = require('../config/points');
+  for (const task of tasks) {
+    const existing = await TaskSubmission.findExisting(task.id, userId);
+    if (existing) continue;
+    const member = await telegramApi('getChatMember', { chat_id: CHANNEL_USERNAME, user_id: telegramUserId }).catch(() => null);
+    const allowedStatuses = new Set(['creator', 'administrator', 'member']);
+    if (!member || !allowedStatuses.has(member.status)) continue;
+    await TaskSubmission.create({ taskId: task.id, userId, proofUrl: null });
+    await db.query(`UPDATE task_submissions SET status = 'approved', reviewed_at = NOW() WHERE task_id = $1 AND user_id = $2`, [task.id, userId]);
+    await Activity.log({ userId, actionType: 'task_completed', points: task.points, note: 'Automatic Telegram task verification' });
+    await User.addPoints(userId, task.points);
+  }
+}
+
 // POST /api/telegram/webhook
 const webhook = asyncHandler(async (req, res) => {
   res.sendStatus(200);
@@ -126,6 +145,8 @@ const webhook = asyncHandler(async (req, res) => {
     telegramUsername,
     new Date()
   );
+
+  await awardTelegramTasks(verification.user_id, telegramUserId);
 
   const verifiedUser = await User.findById(verification.user_id);
   if (!verifiedUser.telegram_verified_at) return;
