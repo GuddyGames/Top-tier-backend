@@ -195,7 +195,8 @@ const User = {
     const { rows } = await db.query(
       `SELECT u.id, u.username, u.telegram_username, u.status, u.created_at,
               u.total_contribution, u.total_points, u.daily_points,
-              u.current_streak, u.rank,
+              u.current_streak,
+              RANK() OVER (ORDER BY u.total_points DESC) AS rank,
               (SELECT COUNT(*)::int FROM users r WHERE r.referred_by = u.id) AS referral_count
        FROM users u
        ORDER BY u.total_points DESC, u.id ASC
