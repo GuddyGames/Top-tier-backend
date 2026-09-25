@@ -33,7 +33,7 @@ const TaskSubmission = {
 
   async listForUser(userId) {
     const { rows } = await db.query(
-      `SELECT ts.id, ts.status, ts.proof_url, ts.submitted_at, t.title, t.points
+      `SELECT ts.id, ts.task_id, ts.status, ts.proof_url, ts.submitted_at, t.title, t.points
        FROM task_submissions ts
        JOIN tasks t ON t.id = ts.task_id
        WHERE ts.user_id = $1
