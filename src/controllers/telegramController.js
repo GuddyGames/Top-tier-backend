@@ -59,6 +59,7 @@ const startVerification = asyncHandler(async (req, res) => {
     expires_in_seconds: TOKEN_TTL_MINUTES * 60,
     telegram_url: deepLink,
     channel_username: CHANNEL_USERNAME,
+    channel_url: `https://t.me/${CHANNEL_USERNAME.replace(/^@/, '')}`,
   });
 });
 
