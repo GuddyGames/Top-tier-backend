@@ -4,6 +4,7 @@ const Activity = require('../models/Activity');
 const DemoTrade = require('../models/DemoTrade');
 const TaskSubmission = require('../models/TaskSubmission');
 const asyncHandler = require('../utils/asyncHandler');
+const { createSignedUrl } = require('../utils/taskProofStorage');
 
 // GET /api/admin/users?limit=50&offset=0&search=
 // A full oversight list: points, streak, referrals, task/demo activity
@@ -148,6 +149,11 @@ const getGlobalTrades = asyncHandler(async (req, res) => {
 // GET /api/admin/tasks/pending — every pending task submission, across tasks.
 const getPendingSubmissions = asyncHandler(async (req, res) => {
   const submissions = await TaskSubmission.listAllPending();
+  for (const submission of submissions) {
+    if (submission.proof_url && !/^https?:\\/\\//i.test(submission.proof_url)) {
+      submission.proof_url = await createSignedUrl(submission.proof_url);
+    }
+  }
   res.json({ submissions });
 });
 
