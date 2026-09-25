@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const path = require('path');
 
 const authRoutes = require('./routes/authRoutes');
 const activityRoutes = require('./routes/activityRoutes');
@@ -14,8 +13,6 @@ const demoRoutes = require('./routes/demoRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const telegramRoutes = require('./routes/telegramRoutes');
 const errorHandler = require('./middleware/errorHandler');
-const { requireAuth } = require('./middleware/auth');
-function requireAuthForProofs() { return requireAuth; }
 
 const app = express();
 
@@ -43,7 +40,6 @@ app.use(
   })
 );
 app.use(express.json({ limit: '100kb' }));
-app.use('/api/tasks/proofs', requireAuthForProofs(), express.static(path.resolve(process.env.TASK_PROOF_STORAGE_PATH || 'storage/task-proofs')));
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
