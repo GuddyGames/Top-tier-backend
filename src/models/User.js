@@ -39,6 +39,7 @@ const User = {
     const { rows } = await db.query(
       `SELECT id, username, email, role, referral_code, telegram_username, status,
               total_contribution, total_points, daily_points, current_streak,
+              telegram_verified_at, telegram_user_id,
               longest_streak, last_active_date, rank, created_at
        FROM users WHERE id = $1`,
       [id]
@@ -120,6 +121,42 @@ const User = {
       [userId, currentStreak, longestStreak, lastActiveDate]
     );
     return rows[0];
+  },
+
+  async saveTelegramVerificationToken(userId, tokenHash, expiresAt) {
+    await db.query(
+      `UPDATE users
+       SET telegram_verification_token_hash = $2,
+           telegram_verification_expires_at = $3
+       WHERE id = $1`,
+      [userId, tokenHash, expiresAt]
+    );
+  },
+
+  async findByTelegramVerificationToken(tokenHash) {
+    const { rows } = await db.query(
+      `SELECT id AS user_id
+       FROM users
+       WHERE telegram_verification_token_hash = $1
+         AND telegram_verification_expires_at > NOW()`,
+      [tokenHash]
+    );
+    return rows[0] || null;
+  },
+
+  async markTelegramVerified(userId, telegramUserId, telegramUsername, verifiedAt) {
+    const { rows } = await db.query(
+      `UPDATE users
+       SET telegram_user_id = $2,
+           telegram_username = $3,
+           telegram_verified_at = $4,
+           telegram_verification_token_hash = NULL,
+           telegram_verification_expires_at = NULL
+       WHERE id = $1
+       RETURNING id, telegram_username, telegram_user_id, telegram_verified_at`,
+      [userId, telegramUserId, telegramUsername || null, verifiedAt]
+    );
+    return rows[0] || null;
   },
 
   async updateTelegramUsername(userId, telegramUsername) {
