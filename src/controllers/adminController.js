@@ -150,8 +150,18 @@ const getGlobalTrades = asyncHandler(async (req, res) => {
 const getPendingSubmissions = asyncHandler(async (req, res) => {
   const submissions = await TaskSubmission.listAllPending();
   for (const submission of submissions) {
-    if (submission.proof_url && !/^https?:\/\//i.test(submission.proof_url)) {
-      submission.proof_url = await createSignedUrl(submission.proof_url);
+    if (submission.proof_url) {
+      let isHttpUrl = false;
+      try {
+        const parsedUrl = new URL(submission.proof_url);
+        isHttpUrl = parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+      } catch {
+        isHttpUrl = false;
+      }
+
+      if (!isHttpUrl) {
+        submission.proof_url = await createSignedUrl(submission.proof_url);
+      }
     }
   }
   res.json({ submissions });
