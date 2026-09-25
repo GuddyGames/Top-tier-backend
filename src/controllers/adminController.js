@@ -151,6 +151,27 @@ const getPendingSubmissions = asyncHandler(async (req, res) => {
   res.json({ submissions });
 });
 
+
+// GET /api/admin/tasks/outstanding — users who have not submitted each active task.
+const getOutstandingTasks = asyncHandler(async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit, 10) || 200, 500);
+  const { rows } = await db.query(
+    `SELECT t.id AS task_id, t.title AS task_title, t.points,
+            u.id AS user_id, u.username, u.email
+     FROM tasks t
+     CROSS JOIN users u
+     LEFT JOIN task_submissions ts
+       ON ts.task_id = t.id AND ts.user_id = u.id
+     WHERE t.is_active = true
+       AND u.status = 'active'
+       AND ts.id IS NULL
+     ORDER BY t.created_at DESC, u.username ASC
+     LIMIT $1`,
+    [limit]
+  );
+  res.json({ outstanding: rows });
+});
+
 module.exports = {
   listUsers,
   getUserDetail,
@@ -162,4 +183,5 @@ module.exports = {
   getGlobalActivity,
   getGlobalTrades,
   getPendingSubmissions,
+  getOutstandingTasks,
 };
