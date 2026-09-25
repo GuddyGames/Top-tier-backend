@@ -55,11 +55,15 @@ CREATE TABLE IF NOT EXISTS tasks (
     description     TEXT,
     link            TEXT,               -- URL of the post to engage with
     points          INTEGER NOT NULL,
+    task_type       VARCHAR(20) NOT NULL DEFAULT 'manual', -- manual | telegram
     created_by      INTEGER REFERENCES users(id) ON DELETE SET NULL,
     is_active       BOOLEAN NOT NULL DEFAULT true,
     task_date       DATE NOT NULL DEFAULT CURRENT_DATE,
     created_at      TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_type VARCHAR(20) NOT NULL DEFAULT 'manual';
+CREATE INDEX IF NOT EXISTS idx_tasks_type_active_date ON tasks(task_type, is_active, task_date);
 
 -- A user's claim that they completed a task. Social actions (likes, comments,
 -- reshares) can't be verified automatically without each platform's API, so
