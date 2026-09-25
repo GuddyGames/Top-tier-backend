@@ -13,8 +13,9 @@ const listTasks = asyncHandler(async (req, res) => {
 
 // POST /api/tasks — admin only
 const createTask = asyncHandler(async (req, res) => {
-  const { title, description, link, points } = req.body;
-  const task = await Task.create({ title, description, link, points, createdBy: req.user.id });
+  const { title, description, link, points, taskType = 'manual' } = req.body;
+  if (!['manual', 'telegram'].includes(taskType)) return res.status(400).json({ error: 'Invalid task type' });
+  const task = await Task.create({ title, description, link, points, createdBy: req.user.id, taskType });
   res.status(201).json({ task });
 });
 
