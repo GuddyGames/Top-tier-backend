@@ -38,6 +38,21 @@ const DemoTrade = {
     return rows;
   },
 
+  // Admin oversight — every user's demo trades, newest first. Optional
+  // status filter ('open' | 'closed') for the control room's trade feed.
+  async recentGlobal({ limit = 50, status } = {}) {
+    const { rows } = await db.query(
+      `SELECT t.*, u.username
+       FROM demo_trades t
+       JOIN users u ON u.id = t.user_id
+       WHERE $2::text IS NULL OR t.status = $2
+       ORDER BY t.opened_at DESC
+       LIMIT $1`,
+      [limit, status || null]
+    );
+    return rows;
+  },
+
   // Powers both the admin panel and the beginner's own performance Home page.
   async summaryForUser(userId) {
     const { rows } = await db.query(

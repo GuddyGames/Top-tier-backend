@@ -51,6 +51,11 @@ const adminScoreValidationRules = [
   body('note').optional({ checkFalsy: true }).trim().isLength({ max: 300 }),
 ];
 
+const adminProfileEditValidationRules = [
+  body('username').optional({ checkFalsy: true }).trim().isLength({ min: 3, max: 30 }),
+  body('telegramUsername').optional({ checkFalsy: true }).trim().isLength({ max: 50 }),
+];
+
 module.exports = {
   validate,
   signupValidationRules,
@@ -60,4 +65,5 @@ module.exports = {
   taskSubmitValidationRules,
   demoTradeValidationRules,
   adminScoreValidationRules,
+  adminProfileEditValidationRules,
 };

@@ -48,6 +48,23 @@ const TaskSubmission = {
     return rows[0] || null;
   },
 
+  // Admin oversight — pending submissions across every task in one list,
+  // instead of checking task-by-task.
+  async listAllPending(limit = 50) {
+    const { rows } = await db.query(
+      `SELECT ts.id, ts.task_id, ts.proof_url, ts.submitted_at,
+              u.id AS user_id, u.username, t.title AS task_title, t.points
+       FROM task_submissions ts
+       JOIN users u ON u.id = ts.user_id
+       JOIN tasks t ON t.id = ts.task_id
+       WHERE ts.status = 'pending'
+       ORDER BY ts.submitted_at ASC
+       LIMIT $1`,
+      [limit]
+    );
+    return rows;
+  },
+
   async setStatus(id, status, reviewedBy) {
     const { rows } = await db.query(
       `UPDATE task_submissions

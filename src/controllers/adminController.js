@@ -2,6 +2,7 @@ const db = require('../config/db');
 const User = require('../models/User');
 const Activity = require('../models/Activity');
 const DemoTrade = require('../models/DemoTrade');
+const TaskSubmission = require('../models/TaskSubmission');
 const asyncHandler = require('../utils/asyncHandler');
 
 // GET /api/admin/users?limit=50&offset=0&search=
@@ -14,7 +15,7 @@ const listUsers = asyncHandler(async (req, res) => {
 
   const { rows } = await db.query(
     `SELECT u.id, u.username, u.email, u.telegram_username, u.status, u.role,
-            u.total_points, u.daily_points, u.current_streak, u.rank, u.created_at,
+            u.total_contribution, u.total_points, u.daily_points, u.current_streak, u.rank, u.created_at,
             (SELECT COUNT(*)::int FROM users r WHERE r.referred_by = u.id) AS referral_count,
             (SELECT COUNT(*)::int FROM task_submissions ts WHERE ts.user_id = u.id AND ts.status = 'pending') AS pending_tasks
      FROM users u
@@ -25,6 +26,22 @@ const listUsers = asyncHandler(async (req, res) => {
   );
 
   res.json({ users: rows, limit, offset });
+});
+
+// PATCH /api/admin/users/:id/contribution — Body: { contribution }
+// Admin-only override of the leaderboard contribution value.
+const updateUserContribution = asyncHandler(async (req, res) => {
+  const userId = req.params.id;
+  const contribution = Number(req.body.contribution);
+
+  if (!Number.isFinite(contribution) || contribution < 0) {
+    return res.status(400).json({ error: 'contribution must be a valid non-negative number' });
+  }
+
+  const updated = await User.updateContribution(userId, contribution);
+  if (!updated) return res.status(404).json({ error: 'User not found' });
+
+  res.json({ user: updated });
 });
 
 // GET /api/admin/users/:id — full detail view: profile + recent activity
@@ -75,4 +92,51 @@ const scoreUser = asyncHandler(async (req, res) => {
   res.status(201).json({ total_points: updated.total_points, points_applied: points });
 });
 
-module.exports = { listUsers, getUserDetail, updateUserStatus, scoreUser };
+// PATCH /api/admin/users/:id — Body: { username?, telegramUsername? }
+// Correct a typo, resolve a duplicate-looking name, etc. Leaderboard
+// fields that are computed (rank) or historical (joined date) aren't
+// exposed here — editing them wouldn't mean anything; rank gets
+// recalculated nightly regardless, and joined date is just what happened.
+const updateUserProfile = asyncHandler(async (req, res) => {
+  const { username, telegramUsername } = req.body;
+  if (username === undefined && telegramUsername === undefined) {
+    return res.status(400).json({ error: 'Provide username and/or telegramUsername' });
+  }
+
+  const user = await User.adminUpdateProfile(req.params.id, { username, telegramUsername });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  res.json({ user });
+});
+
+// GET /api/admin/activity?limit=50 — every user's recent activity, one feed.
+const getGlobalActivity = asyncHandler(async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit, 10) || 50, 200);
+  const activities = await Activity.recentGlobal(limit);
+  res.json({ activities });
+});
+
+// GET /api/admin/trades?limit=50&status=open|closed — every user's demo trades.
+const getGlobalTrades = asyncHandler(async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit, 10) || 50, 200);
+  const status = ['open', 'closed'].includes(req.query.status) ? req.query.status : undefined;
+  const trades = await DemoTrade.recentGlobal({ limit, status });
+  res.json({ trades });
+});
+
+// GET /api/admin/tasks/pending — every pending task submission, across tasks.
+const getPendingSubmissions = asyncHandler(async (req, res) => {
+  const submissions = await TaskSubmission.listAllPending();
+  res.json({ submissions });
+});
+
+module.exports = {
+  listUsers,
+  getUserDetail,
+  updateUserStatus,
+  updateUserProfile,
+  updateUserContribution,
+  scoreUser,
+  getGlobalActivity,
+  getGlobalTrades,
+  getPendingSubmissions,
+};

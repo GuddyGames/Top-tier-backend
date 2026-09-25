@@ -46,6 +46,17 @@ const User = {
     return rows[0] || null;
   },
 
+  async updateContribution(userId, contribution) {
+    const { rows } = await db.query(
+      `UPDATE users
+       SET total_contribution = $2
+       WHERE id = $1
+       RETURNING id, username, total_contribution`,
+      [userId, contribution]
+    );
+    return rows[0] || null;
+  },
+
   // Adds points to both the lifetime and today's tally in one statement.
   async addPoints(userId, points) {
     const { rows } = await db.query(
@@ -77,6 +88,29 @@ const User = {
       `UPDATE users SET telegram_username = $2 WHERE id = $1
        RETURNING id, telegram_username`,
       [userId, telegramUsername || null]
+    );
+    return rows[0];
+  },
+
+  // Admin override — unlike updateTelegramUsername (self-service), this can
+  // also change the username itself. Only pass fields that were actually
+  // provided so a partial edit doesn't null out the rest.
+  async adminUpdateProfile(userId, { username, telegramUsername }) {
+    const fields = [];
+    const values = [userId];
+    if (username !== undefined) {
+      values.push(username);
+      fields.push(`username = $${values.length}`);
+    }
+    if (telegramUsername !== undefined) {
+      values.push(telegramUsername);
+      fields.push(`telegram_username = $${values.length}`);
+    }
+    if (fields.length === 0) return User.findById(userId);
+
+    const { rows } = await db.query(
+      `UPDATE users SET ${fields.join(', ')} WHERE id = $1 RETURNING id, username, telegram_username`,
+      values
     );
     return rows[0];
   },
