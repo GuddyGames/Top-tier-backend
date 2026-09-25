@@ -163,6 +163,7 @@ const getOutstandingTasks = asyncHandler(async (req, res) => {
      LEFT JOIN task_submissions ts
        ON ts.task_id = t.id AND ts.user_id = u.id
      WHERE t.is_active = true
+       AND t.task_date = CURRENT_DATE
        AND u.status = 'active'
        AND ts.id IS NULL
      ORDER BY t.created_at DESC, u.username ASC
