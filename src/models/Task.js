@@ -13,8 +13,8 @@ const Task = {
 
   async listActive() {
     const { rows } = await db.query(
-      `SELECT id, title, description, link, points, created_at
-       FROM tasks WHERE is_active = true
+      `SELECT id, title, description, link, points, task_date, created_at
+       FROM tasks WHERE is_active = true AND task_date = CURRENT_DATE
        ORDER BY created_at DESC`
     );
     return rows;
