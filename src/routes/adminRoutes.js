@@ -5,6 +5,7 @@ const {
   updateUserStatus,
   updateUserProfile,
   updateUserContribution,
+  deleteUserAccount,
   scoreUser,
   getGlobalActivity,
   getGlobalTrades,
@@ -27,6 +28,7 @@ router.get('/users/:id', getUserDetail);
 router.patch('/users/:id', adminProfileEditValidationRules, validate, updateUserProfile);
 router.patch('/users/:id/status', updateUserStatus);
 router.patch('/users/:id/contribution', updateUserContribution);
+router.delete('/users/:id', deleteUserAccount);
 router.post('/users/:id/score', adminScoreValidationRules, validate, scoreUser);
 router.get('/tasks/:id/submissions', listSubmissions);
 router.get('/tasks/pending', getPendingSubmissions);

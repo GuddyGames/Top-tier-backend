@@ -4,6 +4,17 @@ A standalone REST API for a trading-education platform: signup/login,
 referrals, social-media task points, streaks, a leaderboard, and a
 dashboard summary. Built to be consumed by any frontend over HTTP.
 
+> **Not yet included: the actual invest-and-earn-profit feature.**
+> `users.total_contribution` exists as a placeholder column only — nothing
+> writes to it, and there's no deposit/payout logic anywhere in this repo.
+> That's deliberate: "users invest and get profit from trade results" can
+> mean a few very different things (real trades executed via a licensed
+> broker API, a paper-trading simulator for education, a manually-managed
+> fund) and each has a different build **and different legal
+> requirements** — in Nigeria, taking public deposits to trade on people's
+> behalf falls under SEC Nigeria's investment-scheme rules regardless of
+> what the product is called. Wire this up once that mechanism is decided.
+
 ## Stack
 Node.js · Express · Supabase Postgres (raw `pg`, no ORM) · JWT auth · node-cron
 

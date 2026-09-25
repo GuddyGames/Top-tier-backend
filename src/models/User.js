@@ -57,6 +57,45 @@ const User = {
     return rows[0] || null;
   },
 
+  async deleteAccount(userId, { preventLastAdmin = true } = {}) {
+    const client = await db.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const userResult = await client.query(
+        'SELECT id, role FROM users WHERE id = $1 FOR UPDATE',
+        [userId]
+      );
+      const user = userResult.rows[0];
+      if (!user) {
+        await client.query('ROLLBACK');
+        return { deleted: false, reason: 'not_found' };
+      }
+
+      if (preventLastAdmin && user.role === 'admin') {
+        const adminResult = await client.query(
+          `SELECT COUNT(*)::int AS count FROM users WHERE role = 'admin' AND id <> $1`,
+          [userId]
+        );
+        if (adminResult.rows[0].count === 0) {
+          await client.query('ROLLBACK');
+          return { deleted: false, reason: 'last_admin' };
+        }
+      }
+
+      // Most user-owned records use ON DELETE CASCADE. Tasks authored by the
+      // user deliberately keep the task and clear created_by via SET NULL.
+      await client.query('DELETE FROM users WHERE id = $1', [userId]);
+      await client.query('COMMIT');
+      return { deleted: true };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  },
+
   // Adds points to both the lifetime and today's tally in one statement.
   async addPoints(userId, points) {
     const { rows } = await db.query(

@@ -44,6 +44,28 @@ const updateUserContribution = asyncHandler(async (req, res) => {
   res.json({ user: updated });
 });
 
+// DELETE /api/admin/users/:id — permanently removes a user and user-owned data.
+const deleteUserAccount = asyncHandler(async (req, res) => {
+  const userId = Number(req.params.id);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return res.status(400).json({ error: 'Invalid user id' });
+  }
+
+  if (userId === Number(req.user.id)) {
+    return res.status(400).json({ error: 'You cannot delete your own admin account here' });
+  }
+
+  const result = await User.deleteAccount(userId);
+  if (!result.deleted && result.reason === 'not_found') {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  if (!result.deleted && result.reason === 'last_admin') {
+    return res.status(409).json({ error: 'The last admin account cannot be deleted' });
+  }
+
+  res.json({ deleted: true, user_id: userId });
+});
+
 // GET /api/admin/users/:id — full detail view: profile + recent activity
 // + task submissions + demo trading summary, for reviewing one user.
 const getUserDetail = asyncHandler(async (req, res) => {
@@ -135,6 +157,7 @@ module.exports = {
   updateUserStatus,
   updateUserProfile,
   updateUserContribution,
+  deleteUserAccount,
   scoreUser,
   getGlobalActivity,
   getGlobalTrades,
