@@ -10,6 +10,14 @@ const logActivity = asyncHandler(async (req, res) => {
   const { actionType } = req.body;
   const points = POINTS[actionType];
 
+  if (actionType === 'login') {
+    const user = await User.findById(req.user.id);
+    const today = new Date().toISOString().slice(0, 10);
+    if (user.last_active_date && new Date(user.last_active_date).toISOString().slice(0, 10) === today) {
+      return res.status(409).json({ error: 'Daily login already claimed today' });
+    }
+  }
+
   if (points === undefined) {
     return res.status(400).json({
       error: `Unknown actionType "${actionType}"`,
