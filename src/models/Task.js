@@ -1,22 +1,27 @@
 const db = require('../config/db');
 
 const Task = {
-  async create({ title, description, link, points, createdBy }) {
+  async create({ title, description, link, points, createdBy, taskType = 'manual' }) {
     const { rows } = await db.query(
-      `INSERT INTO tasks (title, description, link, points, created_by)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO tasks (title, description, link, points, created_by, task_type)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [title, description || null, link || null, points, createdBy]
+      [title, description || null, link || null, points, createdBy, taskType]
     );
     return rows[0];
   },
 
   async listActive() {
     const { rows } = await db.query(
-      `SELECT id, title, description, link, points, task_date, created_at
+      `SELECT id, title, description, link, points, task_type, task_date, created_at
        FROM tasks WHERE is_active = true AND task_date = CURRENT_DATE
        ORDER BY created_at DESC`
     );
+    return rows;
+  },
+
+  async listActiveTelegram() {
+    const { rows } = await db.query(`SELECT * FROM tasks WHERE is_active = true AND task_date = CURRENT_DATE AND task_type = 'telegram' ORDER BY created_at DESC`);
     return rows;
   },
 
