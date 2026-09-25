@@ -80,7 +80,7 @@ const reviewSubmission = asyncHandler(async (req, res) => {
     await User.addPoints(submission.user_id, task.points);
   }
 
-  if (submission.proof_url && !/^https?:\\/\\//i.test(submission.proof_url)) {
+  if (submission.proof_url && !/^https?:\/\//i.test(submission.proof_url)) {
     await deleteProof(submission.proof_url).catch(() => {});
   }
 
