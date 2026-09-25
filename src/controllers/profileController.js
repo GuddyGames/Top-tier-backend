@@ -10,6 +10,7 @@ const getMyProfile = asyncHandler(async (req, res) => {
     username: user.username,
     email: user.email,
     telegram_username: user.telegram_username,
+    telegram_verified_at: user.telegram_verified_at,
     referral_code: user.referral_code,
     status: user.status,
     role: user.role,
