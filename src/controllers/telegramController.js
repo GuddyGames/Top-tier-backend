@@ -14,6 +14,12 @@ function webhookSecret() {
 }
 const TOKEN_TTL_MINUTES = 10;
 
+function buildTaskToken(taskId, token) { return 'task:' + taskId + ':' + token; }
+function parseTaskToken(value) {
+  const match = String(value || '').match(/^task:(\d+):(.+)$/);
+  return match ? { taskId: Number(match[1]), token: match[2] } : { taskId: null, token: value };
+}
+
 function hashToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
@@ -67,6 +73,33 @@ const startVerification = asyncHandler(async (req, res) => {
   });
 });
 
+// POST /api/telegram/tasks/:id/start
+const startTelegramTask = asyncHandler(async (req, res) => {
+  const taskId = Number(req.params.id);
+  if (!Number.isInteger(taskId) || taskId <= 0) return res.status(400).json({ error: 'Invalid task id' });
+
+  const task = await Task.findById(taskId);
+  const today = new Date().toISOString().slice(0, 10);
+  if (!task || !task.is_active || task.task_type !== 'telegram' || String(task.task_date).slice(0, 10) !== today) {
+    return res.status(404).json({ error: 'Telegram task not found or inactive' });
+  }
+
+  const existing = await TaskSubmission.findExisting(taskId, req.user.id);
+  if (existing) return res.json({ completed: existing.status === 'approved', submission: existing });
+
+  const token = crypto.randomBytes(24).toString('base64url');
+  await User.saveTelegramVerificationToken(req.user.id, hashToken(token), new Date(Date.now() + TOKEN_TTL_MINUTES * 60 * 1000));
+
+  const bot = await telegramApi('getMe', {});
+  res.json({
+    completed: false,
+    telegram_url: 'https://t.me/' + bot.username + '?start=' + encodeURIComponent(buildTaskToken(taskId, token)),
+    channel_username: CHANNEL_USERNAME,
+    channel_url: CHANNEL_URL,
+    expires_in_seconds: TOKEN_TTL_MINUTES * 60,
+  });
+});
+
 // GET /api/telegram/verification/status
 const getVerificationStatus = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id);
@@ -111,7 +144,8 @@ const webhook = asyncHandler(async (req, res) => {
   const match = text.match(/^\/start(?:\s+(.+))?$/);
   if (!message?.from || !match?.[1]) return;
 
-  const verification = await User.findByTelegramVerificationToken(hashToken(match[1].trim()));
+  const parsedStart = parseTaskToken(match[1].trim());
+  const verification = await User.findByTelegramVerificationToken(hashToken(parsedStart.token));
   if (!verification) {
     await telegramApi('sendMessage', {
       chat_id: message.chat.id,
@@ -146,7 +180,20 @@ const webhook = asyncHandler(async (req, res) => {
     new Date()
   );
 
-  await awardTelegramTasks(verification.user_id, telegramUserId);
+  if (parsedStart.taskId) {
+    const task = await Task.findById(parsedStart.taskId);
+    if (task && task.is_active && task.task_type === 'telegram') {
+      const existing = await TaskSubmission.findExisting(task.id, verification.user_id);
+      if (!existing) {
+        await TaskSubmission.create({ taskId: task.id, userId: verification.user_id, proofUrl: null });
+        await db.query(`UPDATE task_submissions SET status = 'approved', reviewed_at = NOW() WHERE task_id = $1 AND user_id = $2`, [task.id, verification.user_id]);
+        await Activity.log({ userId: verification.user_id, actionType: 'task_completed', points: task.points, note: 'Telegram bot task verification' });
+        await User.addPoints(verification.user_id, task.points);
+      }
+    }
+  } else {
+    await awardTelegramTasks(verification.user_id, telegramUserId);
+  }
 
   const verifiedUser = await User.findById(verification.user_id);
   if (!verifiedUser.telegram_verified_at) return;
@@ -181,5 +228,6 @@ module.exports = {
   startVerification,
   getVerificationStatus,
   webhook,
+  startTelegramTask,
   configureTelegramWebhook,
 };
