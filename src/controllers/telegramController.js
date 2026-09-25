@@ -4,6 +4,10 @@ const db = require('../config/db');
 const asyncHandler = require('../utils/asyncHandler');
 
 const CHANNEL_USERNAME = process.env.TELEGRAM_CHANNEL_USERNAME || '@Toptiertradingchannel';
+
+function webhookSecret() {
+  return crypto.createHash('sha256').update(process.env.TELEGRAM_BOT_TOKEN || '').digest('hex');
+}
 const TOKEN_TTL_MINUTES = 10;
 
 function hashToken(token) {
@@ -75,6 +79,11 @@ const getVerificationStatus = asyncHandler(async (req, res) => {
 const webhook = asyncHandler(async (req, res) => {
   res.sendStatus(200);
 
+  const expectedSecret = webhookSecret();
+  if (expectedSecret && req.get('X-Telegram-Bot-Api-Secret-Token') !== expectedSecret) {
+    return res.sendStatus(401);
+  }
+
   const message = req.body?.message;
   const text = message?.text || '';
   const match = text.match(/^\/start(?:\s+(.+))?$/);
@@ -128,7 +137,7 @@ async function configureTelegramWebhook() {
     'https://top-tier-backend-sbd5.onrender.com';
   const url = `${baseUrl.replace(/\/+$/, '')}/api/telegram/webhook`;
   try {
-    await telegramApi('setWebhook', { url });
+    await telegramApi('setWebhook', { url, secret_token: webhookSecret() });
     console.log('[telegram] webhook configured');
   } catch (error) {
     console.error('[telegram] webhook setup failed:', error.message);
