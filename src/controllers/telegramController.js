@@ -61,7 +61,6 @@ const startVerification = asyncHandler(async (req, res) => {
     telegram_url: deepLink,
     channel_username: CHANNEL_USERNAME,
     channel_url: CHANNEL_URL,
-    channel_url: `https://t.me/${CHANNEL_USERNAME.replace(/^@/, '')}`,
   });
 });
 
@@ -75,6 +74,7 @@ const getVerificationStatus = asyncHandler(async (req, res) => {
     telegram_username: user.telegram_username,
     telegram_verified_at: user.telegram_verified_at,
     channel_username: CHANNEL_USERNAME,
+    channel_url: CHANNEL_URL,
   });
 });
 
