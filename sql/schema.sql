@@ -12,6 +12,10 @@ CREATE TABLE IF NOT EXISTS users (
     status          VARCHAR(20) NOT NULL DEFAULT 'active', -- 'active' or 'inactive'
     referral_code   VARCHAR(20) UNIQUE NOT NULL,
     referred_by     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    telegram_user_id BIGINT UNIQUE,
+    telegram_verified_at TIMESTAMP,
+    telegram_verification_token_hash VARCHAR(64),
+    telegram_verification_expires_at TIMESTAMP,
     -- Placeholder only — not wired to any real deposit/payout logic yet.
     -- Populate this once the trading/investment mechanism is defined.
     total_contribution NUMERIC(14, 2) NOT NULL DEFAULT 0,
