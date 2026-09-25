@@ -4,6 +4,7 @@ const db = require('../config/db');
 const asyncHandler = require('../utils/asyncHandler');
 
 const CHANNEL_USERNAME = process.env.TELEGRAM_CHANNEL_USERNAME || '@Toptiertradingchannel';
+const CHANNEL_URL = `https://t.me/${CHANNEL_USERNAME.replace(/^@/, '')}`;
 
 function webhookSecret() {
   return crypto.createHash('sha256').update(process.env.TELEGRAM_BOT_TOKEN || '').digest('hex');
@@ -59,6 +60,7 @@ const startVerification = asyncHandler(async (req, res) => {
     expires_in_seconds: TOKEN_TTL_MINUTES * 60,
     telegram_url: deepLink,
     channel_username: CHANNEL_USERNAME,
+    channel_url: CHANNEL_URL,
     channel_url: `https://t.me/${CHANNEL_USERNAME.replace(/^@/, '')}`,
   });
 });
@@ -124,6 +126,15 @@ const webhook = asyncHandler(async (req, res) => {
     telegramUsername,
     new Date()
   );
+
+  const verifiedUser = await User.findById(verification.user_id);
+  if (!verifiedUser.telegram_verified_at) return;
+  const alreadyAwarded = await db.query(`SELECT 1 FROM activities WHERE user_id = $1 AND action_type = 'telegram_verification_bonus' LIMIT 1`, [verification.user_id]);
+  if (alreadyAwarded.rowCount === 0) {
+    const POINTS = require('../config/points');
+    await db.query(`INSERT INTO activities (user_id, action_type, points, note) VALUES ($1, 'telegram_verification_bonus', $2, 'Telegram channel verification')`, [verification.user_id, POINTS.telegram_verification_bonus]);
+    await User.addPoints(verification.user_id, POINTS.telegram_verification_bonus);
+  }
 
   await telegramApi('sendMessage', {
     chat_id: message.chat.id,
