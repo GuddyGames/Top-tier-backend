@@ -25,6 +25,11 @@ const User = {
     return rows[0].count;
   },
 
+  async getReferrals(userId) {
+    const { rows } = await db.query('SELECT id, username, email, telegram_username, created_at FROM users WHERE referred_by = $1 ORDER BY created_at DESC', [userId]);
+    return rows;
+  },
+
   async findByEmail(email) {
     const { rows } = await db.query('SELECT * FROM users WHERE email = $1', [email]);
     return rows[0] || null;

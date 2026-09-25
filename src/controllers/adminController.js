@@ -173,8 +173,18 @@ const getOutstandingTasks = asyncHandler(async (req, res) => {
   res.json({ outstanding: rows });
 });
 
+const listReferrals = asyncHandler(async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit, 10) || 200, 500);
+  const { rows } = await db.query(
+    'SELECT r.id AS referral_id, r.created_at AS joined_at, ref.id AS referrer_id, ref.username AS referrer_username, ref.email AS referrer_email, ref.telegram_username AS referrer_telegram_username, r.username AS referred_username, r.email AS referred_email, r.telegram_username AS referred_telegram_username FROM users r JOIN users ref ON ref.id = r.referred_by ORDER BY r.created_at DESC LIMIT $1',
+    [limit]
+  );
+  res.json({ referrals: rows });
+});
+
 module.exports = {
   listUsers,
+  listReferrals,
   getUserDetail,
   updateUserStatus,
   updateUserProfile,
