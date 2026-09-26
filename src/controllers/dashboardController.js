@@ -13,6 +13,12 @@ const getMyDashboard = asyncHandler(async (req, res) => {
   ]);
 
   res.json({
+    user: {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      telegram_username: user.telegram_username,
+    },
     stats: {
       total_points: user.total_points,
       daily_points: user.daily_points,
