@@ -55,12 +55,12 @@ const TaskSubmission = {
 
     if (['pending', 'approved', 'rejected'].includes(status)) {
       values.push(status);
-      where.push(`ts.status = \${values.length}`);
+      where.push(`ts.status = ${values.length}`);
     }
 
     if (search) {
       values.push(`%${search}%`);
-      where.push(`(u.username ILIKE \${values.length} OR u.email ILIKE \${values.length} OR t.title ILIKE \${values.length})`);
+      where.push(`(u.username ILIKE ${values.length} OR u.email ILIKE ${values.length} OR t.title ILIKE ${values.length})`);
     }
 
     const limitIndex = values.length + 1;
