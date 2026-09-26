@@ -49,24 +49,23 @@ const TaskSubmission = {
   },
 
   // Admin oversight — filterable submission queue across every task.
+  // Status is whitelisted into the SQL text; search remains parameterized.
   async listAll({ status = 'all', search = '', limit = 50, offset = 0 } = {}) {
     const values = [];
     const where = [];
 
     if (['pending', 'approved', 'rejected'].includes(status)) {
-      values.push(status);
-      where.push(`ts.status = ${values.length}`);
+      where.push(`ts.status = '${status}'`);
     }
 
     if (search) {
       values.push(`%${search}%`);
-      where.push(`(u.username ILIKE ${values.length} OR u.email ILIKE ${values.length} OR t.title ILIKE ${values.length})`);
+      const p = `$${values.length}`;
+      where.push(`(u.username ILIKE ${p} OR u.email ILIKE ${p} OR t.title ILIKE ${p})`);
     }
 
-    const limitIndex = values.length + 1;
-    values.push(limit);
-    const offsetIndex = values.length + 1;
-    values.push(offset);
+    const safeLimit = Math.max(1, Math.min(100, Number(limit) || 50));
+    const safeOffset = Math.max(0, Number(offset) || 0);
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
     const { rows } = await db.query(
@@ -79,18 +78,17 @@ const TaskSubmission = {
        JOIN tasks t ON t.id = ts.task_id
        ${whereSql}
        ORDER BY CASE WHEN ts.status = 'pending' THEN 0 ELSE 1 END, ts.submitted_at DESC
-       LIMIT ${limitIndex} OFFSET ${offsetIndex}`,
+       LIMIT ${safeLimit} OFFSET ${safeOffset}`,
       values
     );
 
-    const countValues = values.slice(0, values.length - 2);
     const { rows: countRows } = await db.query(
       `SELECT COUNT(*)::int AS count
        FROM task_submissions ts
        JOIN users u ON u.id = ts.user_id
        JOIN tasks t ON t.id = ts.task_id
        ${whereSql}`,
-      countValues
+      values
     );
 
     return { submissions: rows, total: countRows[0]?.count || 0 };
