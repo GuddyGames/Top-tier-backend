@@ -141,7 +141,7 @@ const webhook = asyncHandler(async (req, res) => {
 
   const message = req.body?.message;
   const text = message?.text || '';
-  const match = text.match(/^\\/start(?:\\s+(.+))?$/);
+  const match = text.match(/^\/start(?:\s+(.+))?$/);
   const command = text.trim().toLowerCase();
 
   // Public bot welcome + trading risk disclosure. Token-specific verification
@@ -169,7 +169,6 @@ const webhook = asyncHandler(async (req, res) => {
     return;
   }
 
-  if (!message?.from || !match?.[1]) return;
   if (!message?.from || !match?.[1]) return;
 
   const parsedStart = parseTaskToken(match[1].trim());
