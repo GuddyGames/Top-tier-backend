@@ -11,6 +11,7 @@ const {
   getGlobalActivity,
   getGlobalTrades,
   getPendingSubmissions,
+  listAdminSubmissions,
   getOutstandingTasks,
 } = require('../controllers/adminController');
 const { listSubmissions } = require('../controllers/taskController'); // re-exposed under /admin for a single control room
@@ -35,6 +36,7 @@ router.delete('/users/:id', deleteUserAccount);
 router.post('/users/:id/score', adminScoreValidationRules, validate, scoreUser);
 router.get('/tasks/:id/submissions', listSubmissions);
 router.get('/tasks/pending', getPendingSubmissions);
+router.get('/submissions', listAdminSubmissions);
 router.get('/tasks/outstanding', getOutstandingTasks);
 router.get('/activity', getGlobalActivity);
 router.get('/trades', getGlobalTrades);
