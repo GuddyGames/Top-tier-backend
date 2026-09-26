@@ -1,14 +1,6 @@
-// Nudges each demo symbol's price by a small random percentage and
-// records the tick to demo_price_history for charting.
-// Deliberately simple — this is for practice trades, not real market
-// data. Swap `tick()` for a real price-feed call later; nothing else
-// in the demo-trading code needs to change since it only ever reads
-// the current price from demo_symbol_prices.
+// Nudges each non-live demo symbol's price by a small random percentage and records the tick.
 const db = require('../config/db');
 
-// Rough per-tick volatility per instrument (as a fraction of price).
-// Crypto moves more than majors, so it gets a wider band. Scaled down
-// from the old once-a-minute values since this now ticks every 10s.
 const VOLATILITY = {
   'EUR/USD': 0.00035,
   'GBP/USD': 0.00035,
@@ -22,16 +14,19 @@ const VOLATILITY = {
   'SOL/USD': 0.008,
 };
 
+const LIVE_SYMBOLS = new Set(['EUR/USD', 'BTC/USD', 'XAU/USD']);
+
 function randomWalk(price, vol) {
-  const change = (Math.random() * 2 - 1) * vol; // -vol .. +vol
-  const next = price * (1 + change);
-  return Math.max(next, 0.00001);
+  const change = (Math.random() * 2 - 1) * vol;
+  return Math.max(price * (1 + change), 0.00001);
 }
 
 async function tick() {
   const { rows } = await db.query('SELECT symbol, price FROM demo_symbol_prices');
 
   for (const row of rows) {
+    if (LIVE_SYMBOLS.has(row.symbol)) continue;
+
     const vol = VOLATILITY[row.symbol] ?? 0.0005;
     const next = randomWalk(parseFloat(row.price), vol);
     await db.query(
