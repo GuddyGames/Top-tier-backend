@@ -44,12 +44,12 @@ const signup = asyncHandler(async (req, res) => {
 
   // Signup itself earns a starter bonus and shows up in the activity log
   // and dashboard's "new signups today" count immediately.
-  await Activity.log({ userId: user.id, actionType: 'signup_bonus', points: POINTS.signup_bonus });
+  await Activity.log({ userId: user.id, actionType: 'signup_bonus', points: POINTS.signup_bonus, note: 'Signup bonus' });
   await User.addPoints(user.id, POINTS.signup_bonus);
 
   // Reward whoever referred this signup.
   if (referrer) {
-    await Activity.log({ userId: referrer.id, actionType: 'referral_bonus', points: POINTS.referral_bonus });
+    await Activity.log({ userId: referrer.id, actionType: 'referral_bonus', points: POINTS.referral_bonus, note: `Referral bonus for ${username} joining with your referral code` });
     await User.addPoints(referrer.id, POINTS.referral_bonus);
   }
 
@@ -79,7 +79,7 @@ const login = asyncHandler(async (req, res) => {
 
   // Award the daily login bonus once per calendar day.
   if (!user.last_active_date || new Date(user.last_active_date).toISOString().slice(0, 10) !== new Date().toISOString().slice(0, 10)) {
-    await Activity.log({ userId: user.id, actionType: 'login', points: POINTS.login });
+    await Activity.log({ userId: user.id, actionType: 'login', points: POINTS.login, note: 'Daily login bonus' });
     await User.addPoints(user.id, POINTS.login);
     const fresh = await User.findById(user.id);
     const result = computeStreak({ lastActiveDate: fresh.last_active_date, currentStreak: fresh.current_streak, longestStreak: fresh.longest_streak });
