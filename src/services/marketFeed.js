@@ -16,6 +16,7 @@ const lastPersistAt = new Map();
 const lastHistoryWriteAt = new Map();
 const HISTORY_WRITE_INTERVAL_MS = 1000;
 const PRICE_WRITE_INTERVAL_MS = 250;
+const TWELVE_DATA_SYMBOLS = new Set(['EUR/USD', 'BTC/USD', 'XAU/USD']);
 
 async function loadSymbols() {
   try {
@@ -93,10 +94,12 @@ function connectProvider() {
   );
 
   providerSocket.on('open', () => {
+    const liveSymbols = symbols.filter((symbol) => TWELVE_DATA_SYMBOLS.has(symbol));
     console.log('[marketFeed] connected to Twelve Data');
+    console.log('[marketFeed] Twelve Data symbols:', liveSymbols.join(', '));
     providerSocket.send(JSON.stringify({
       action: 'subscribe',
-      params: { symbols: symbols.join(',') },
+      params: { symbols: liveSymbols.join(',') },
     }));
 
     clearInterval(heartbeatTimer);
