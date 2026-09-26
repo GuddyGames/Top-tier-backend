@@ -1,20 +1,17 @@
 const cron = require('node-cron');
-const { tick } = require('../utils/priceSimulator');
 const { checkStopsAndTargets } = require('../utils/demoTradeEngine');
 
-// Every 10 seconds — frequent enough for the chart to feel alive and
-// for stop-loss/take-profit to trigger promptly, without hammering the
-// DB. node-cron's 6-field format (seconds first) enables this.
+// Live market prices now come from the market WebSocket feed.
+// This job only checks demo stop-loss/take-profit orders.
 function schedulePriceTickJob() {
-  cron.schedule('*/10 * * * * *', async () => {
+  cron.schedule('*/2 * * * * *', async () => {
     try {
-      await tick();
       await checkStopsAndTargets();
     } catch (err) {
       console.error('[priceTickJob] failed:', err);
     }
   });
-  console.log('[priceTickJob] scheduled every 10 seconds');
+  console.log('[priceTickJob] stop/target checker scheduled every 2 seconds');
 }
 
 module.exports = { schedulePriceTickJob };
