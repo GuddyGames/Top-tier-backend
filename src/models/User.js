@@ -138,6 +138,15 @@ const User = {
     );
   },
 
+  async findByTelegramUserId(telegramUserId) {
+    const { rows } = await db.query(
+      `SELECT id, username, email, telegram_username, telegram_user_id, telegram_verified_at, daily_points, total_points
+       FROM users WHERE telegram_user_id = $1 AND telegram_verified_at IS NOT NULL`,
+      [telegramUserId]
+    );
+    return rows[0] || null;
+  },
+
   async findByTelegramVerificationToken(tokenHash) {
     const { rows } = await db.query(
       `SELECT id AS user_id
