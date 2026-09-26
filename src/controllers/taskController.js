@@ -76,7 +76,7 @@ const reviewSubmission = asyncHandler(async (req, res) => {
 
   if (status === 'approved') {
     const task = await Task.findById(submission.task_id);
-    await Activity.log({ userId: submission.user_id, actionType: 'task_completed', points: task.points });
+    await Activity.log({ userId: submission.user_id, actionType: 'task_completed', points: task.points, note: `Completed task: ${task.title}` });
     await User.addPoints(submission.user_id, task.points);
   }
 
