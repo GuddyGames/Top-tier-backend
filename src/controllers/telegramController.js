@@ -144,6 +144,28 @@ const webhook = asyncHandler(async (req, res) => {
   const match = text.match(/^\/start(?:\s+(.+))?$/);
   const command = text.trim().toLowerCase();
 
+  // First-contact welcome: every new Telegram user receives the welcome and
+  // risk disclosure once, regardless of whether they are linked to Top-Tier.
+  if (message?.from?.id) {
+    try {
+      const welcome = await db.query(
+        `INSERT INTO telegram_welcomes (telegram_user_id, telegram_username)
+         VALUES ($1, $2)
+         ON CONFLICT (telegram_user_id) DO NOTHING
+         RETURNING telegram_user_id`,
+        [message.from.id, normalizeTelegramUsername(message.from.username)]
+      );
+      if (welcome.rowCount > 0) {
+        await telegramApi('sendMessage', {
+          chat_id: message.chat.id,
+          text: 'Welcome to Top-Tier! 👋\\n\\nWe are glad to have you here. You can complete tasks, earn points and use our demo terminal to practise trading.\\n\\n⚠️ RISK DISCLOSURE\\nTrading involves substantial risk of loss. Demo results are not real profits and do not guarantee future results. Never trade money you cannot afford to lose. Top-Tier does not provide financial advice.',
+        });
+      }
+    } catch (error) {
+      console.error('[telegram] first-contact welcome failed:', error.message);
+    }
+  }
+
   // Public bot welcome + trading risk disclosure. Token-specific verification
   // continues below so existing verification/task flows are preserved.
   if (command === '/start' || command.startsWith('/start ')) {
