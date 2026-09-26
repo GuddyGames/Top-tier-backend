@@ -63,6 +63,13 @@ CREATE TABLE IF NOT EXISTS tasks (
 );
 
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_type VARCHAR(20) NOT NULL DEFAULT 'manual';
+
+-- Tracks Telegram users who have already received the first-contact welcome.
+CREATE TABLE IF NOT EXISTS telegram_welcomes (
+    telegram_user_id BIGINT PRIMARY KEY,
+    telegram_username VARCHAR(255),
+    welcomed_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
 CREATE INDEX IF NOT EXISTS idx_tasks_type_active_date ON tasks(task_type, is_active, task_date);
 
 -- A user's claim that they completed a task. Social actions (likes, comments,
