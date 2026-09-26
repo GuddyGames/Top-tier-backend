@@ -6,12 +6,20 @@ require('dotenv').config();
 // leave it unset for a local Postgres install with no SSL configured.
 const sslConfig = process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false;
 
-// A single shared connection pool. Every query in the app should go
-// through this — never open a new pg.Client() per request, that's
-// what exhausts your database's connection limit under load.
+// Keep one shared, deliberately small pool for the whole API.
+// A small pool is safer on Render/Supabase because each process can otherwise
+// consume too many database connections. pg also queues requests when all
+// clients are busy instead of creating unlimited connections.
 const pool = new Pool(
   process.env.DATABASE_URL
-    ? { connectionString: process.env.DATABASE_URL, ssl: sslConfig }
+    ? {
+        connectionString: process.env.DATABASE_URL,
+        ssl: sslConfig,
+        max: Number(process.env.PG_POOL_MAX) || 5,
+        idleTimeoutMillis: Number(process.env.PG_IDLE_TIMEOUT_MS) || 30000,
+        connectionTimeoutMillis: Number(process.env.PG_CONNECTION_TIMEOUT_MS) || 10000,
+        maxUses: Number(process.env.PG_MAX_USES) || 1000,
+      }
     : {
         host: process.env.PGHOST,
         port: process.env.PGPORT,
@@ -19,14 +27,24 @@ const pool = new Pool(
         user: process.env.PGUSER,
         password: process.env.PGPASSWORD,
         ssl: sslConfig,
+        max: Number(process.env.PG_POOL_MAX) || 5,
+        idleTimeoutMillis: Number(process.env.PG_IDLE_TIMEOUT_MS) || 30000,
+        connectionTimeoutMillis: Number(process.env.PG_CONNECTION_TIMEOUT_MS) || 10000,
+        maxUses: Number(process.env.PG_MAX_USES) || 1000,
       }
 );
 
+// Prevent an idle-client database error from crashing the Node process.
 pool.on('error', (err) => {
-  // Fires on idle client errors (e.g. DB restarted) — log, don't crash.
-  console.error('Unexpected PostgreSQL error on idle client', err);
+  console.error('[db] Unexpected PostgreSQL idle-client error:', err.message);
 });
 
+// Log pool-level diagnostics without exposing DATABASE_URL/passwords.
+pool.on('connect', () => {
+  console.log('[db] PostgreSQL connection established');
+});
+
+// Reuse the pool everywhere. Do not create pg.Client/Pool instances per request.
 module.exports = {
   query: (text, params) => pool.query(text, params),
   pool,
