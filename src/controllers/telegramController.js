@@ -125,7 +125,7 @@ async function awardTelegramTasks(userId, telegramUserId) {
     if (!member || !allowedStatuses.has(member.status)) continue;
     await TaskSubmission.create({ taskId: task.id, userId, proofUrl: null });
     await db.query(`UPDATE task_submissions SET status = 'approved', reviewed_at = NOW() WHERE task_id = $1 AND user_id = $2`, [task.id, userId]);
-    await Activity.log({ userId, actionType: 'task_completed', points: task.points, note: 'Automatic Telegram task verification' });
+    await Activity.log({ userId, actionType: 'task_completed', points: task.points, note: `Completed Telegram task: ${task.title}` });
     await User.addPoints(userId, task.points);
   }
 }
@@ -187,7 +187,7 @@ const webhook = asyncHandler(async (req, res) => {
       if (!existing) {
         await TaskSubmission.create({ taskId: task.id, userId: verification.user_id, proofUrl: null });
         await db.query(`UPDATE task_submissions SET status = 'approved', reviewed_at = NOW() WHERE task_id = $1 AND user_id = $2`, [task.id, verification.user_id]);
-        await Activity.log({ userId: verification.user_id, actionType: 'task_completed', points: task.points, note: 'Telegram bot task verification' });
+        await Activity.log({ userId: verification.user_id, actionType: 'task_completed', points: task.points, note: `Completed Telegram task: ${task.title}` });
         await User.addPoints(verification.user_id, task.points);
       }
     }
@@ -200,7 +200,7 @@ const webhook = asyncHandler(async (req, res) => {
   const alreadyAwarded = await db.query(`SELECT 1 FROM activities WHERE user_id = $1 AND action_type = 'telegram_verification_bonus' LIMIT 1`, [verification.user_id]);
   if (alreadyAwarded.rowCount === 0) {
     const POINTS = require('../config/points');
-    await db.query(`INSERT INTO activities (user_id, action_type, points, note) VALUES ($1, 'telegram_verification_bonus', $2, 'Telegram channel verification')`, [verification.user_id, POINTS.telegram_verification_bonus]);
+    await db.query(`INSERT INTO activities (user_id, action_type, points, note) VALUES ($1, 'telegram_verification_bonus', $2, 'Telegram verification bonus')`, [verification.user_id, POINTS.telegram_verification_bonus]);
     await User.addPoints(verification.user_id, POINTS.telegram_verification_bonus);
   }
 
