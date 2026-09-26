@@ -146,25 +146,48 @@ const getGlobalTrades = asyncHandler(async (req, res) => {
   res.json({ trades });
 });
 
-// GET /api/admin/tasks/pending — every pending task submission, across tasks.
-const getPendingSubmissions = asyncHandler(async (req, res) => {
-  const submissions = await TaskSubmission.listAllPending();
+async function hydrateProofUrls(submissions) {
   for (const submission of submissions) {
-    if (submission.proof_url) {
-      let isHttpUrl = false;
-      try {
-        const parsedUrl = new URL(submission.proof_url);
-        isHttpUrl = parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
-      } catch {
-        isHttpUrl = false;
-      }
-
-      if (!isHttpUrl) {
-        submission.proof_url = await createSignedUrl(submission.proof_url);
-      }
+    if (!submission.proof_url) continue;
+    let isHttpUrl = false;
+    try {
+      const parsedUrl = new URL(submission.proof_url);
+      isHttpUrl = parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+    } catch {
+      isHttpUrl = false;
+    }
+    if (!isHttpUrl) {
+      submission.proof_url = await createSignedUrl(submission.proof_url);
     }
   }
-  res.json({ submissions });
+  return submissions;
+}
+
+// GET /api/admin/submissions — filterable submission management queue.
+const listAdminSubmissions = asyncHandler(async (req, res) => {
+  const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 100);
+  const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
+  const status = req.query.status || 'all';
+  const search = String(req.query.search || '').trim().slice(0, 80);
+
+  const result = await TaskSubmission.listAll({ status, search, limit, offset });
+  await hydrateProofUrls(result.submissions);
+
+  res.json({
+    submissions: result.submissions,
+    total: result.total,
+    limit,
+    offset,
+    status,
+    search,
+  });
+});
+
+// GET /api/admin/tasks/pending — compatibility endpoint for the existing UI.
+const getPendingSubmissions = asyncHandler(async (req, res) => {
+  const result = await TaskSubmission.listAll({ status: 'pending', limit: 50, offset: 0 });
+  await hydrateProofUrls(result.submissions);
+  res.json({ submissions: result.submissions });
 });
 
 
@@ -210,5 +233,6 @@ module.exports = {
   getGlobalActivity,
   getGlobalTrades,
   getPendingSubmissions,
+  listAdminSubmissions,
   getOutstandingTasks,
 };
