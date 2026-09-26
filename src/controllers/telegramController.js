@@ -149,7 +149,7 @@ const webhook = asyncHandler(async (req, res) => {
   if (command === '/start' || command.startsWith('/start ')) {
     await telegramApi('sendMessage', {
       chat_id: message.chat.id,
-      text: 'Welcome to Top-Tier! 👋\\n\\nComplete tasks, track your points and use the demo terminal to practise.\\n\\n⚠️ RISK DISCLOSURE: Trading involves substantial risk of loss. Demo results are not real profits and do not guarantee future results. Never trade money you cannot afford to lose. Top-Tier does not provide financial advice.',
+      text: 'Welcome to Top-Tier! 👋\n\nComplete tasks, track your points and use the demo terminal to practise.\n\n⚠️ RISK DISCLOSURE: Trading involves substantial risk of loss. Demo results are not real profits and do not guarantee future results. Never trade money you cannot afford to lose. Top-Tier does not provide financial advice.',
     }).catch(() => {});
   }
 
@@ -164,7 +164,7 @@ const webhook = asyncHandler(async (req, res) => {
     }
     await telegramApi('sendMessage', {
       chat_id: message.chat.id,
-      text: `📊 Daily contribution confirmation\\n\\nToday: ${Number(telegramUser.daily_points || 0).toLocaleString()} pts\\nTotal earnings: ${Number(telegramUser.total_points || 0).toLocaleString()} pts\\n\\nYour Top-Tier daily contribution has been confirmed from the account linked to this Telegram.`,
+      text: `📊 Daily contribution confirmation\n\nToday: ${Number(telegramUser.daily_points || 0).toLocaleString()} pts\nTotal earnings: ${Number(telegramUser.total_points || 0).toLocaleString()} pts\n\nYour Top-Tier daily contribution has been confirmed from the account linked to this Telegram.`,
     }).catch(() => {});
     return;
   }
