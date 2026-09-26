@@ -141,7 +141,35 @@ const webhook = asyncHandler(async (req, res) => {
 
   const message = req.body?.message;
   const text = message?.text || '';
-  const match = text.match(/^\/start(?:\s+(.+))?$/);
+  const match = text.match(/^\\/start(?:\\s+(.+))?$/);
+  const command = text.trim().toLowerCase();
+
+  // Public bot welcome + trading risk disclosure. Token-specific verification
+  // continues below so existing verification/task flows are preserved.
+  if (command === '/start' || command.startsWith('/start ')) {
+    await telegramApi('sendMessage', {
+      chat_id: message.chat.id,
+      text: 'Welcome to Top-Tier! 👋\\n\\nComplete tasks, track your points and use the demo terminal to practise.\\n\\n⚠️ RISK DISCLOSURE: Trading involves substantial risk of loss. Demo results are not real profits and do not guarantee future results. Never trade money you cannot afford to lose. Top-Tier does not provide financial advice.',
+    }).catch(() => {});
+  }
+
+  if (command === '/daily' || command === '/contribution' || command === '/dailycontribution') {
+    const telegramUser = await User.findByTelegramUserId(message.from.id);
+    if (!telegramUser) {
+      await telegramApi('sendMessage', {
+        chat_id: message.chat.id,
+        text: 'Your Telegram account is not verified with Top-Tier yet. Use the Telegram verification flow from your Top-Tier profile first.',
+      }).catch(() => {});
+      return;
+    }
+    await telegramApi('sendMessage', {
+      chat_id: message.chat.id,
+      text: `📊 Daily contribution confirmation\\n\\nToday: ${Number(telegramUser.daily_points || 0).toLocaleString()} pts\\nTotal earnings: ${Number(telegramUser.total_points || 0).toLocaleString()} pts\\n\\nYour Top-Tier daily contribution has been confirmed from the account linked to this Telegram.`,
+    }).catch(() => {});
+    return;
+  }
+
+  if (!message?.from || !match?.[1]) return;
   if (!message?.from || !match?.[1]) return;
 
   const parsedStart = parseTaskToken(match[1].trim());
