@@ -12,6 +12,7 @@ const { scheduleDailyRankJob } = require('./jobs/dailyRankJob');
 const { schedulePriceTickJob } = require('./jobs/priceTickJob');
 const { configureTelegramWebhook } = require('./controllers/telegramController');
 const { startMarketFeed } = require('./services/marketFeed');
+const { scheduleTelegramAutomation } = require('./jobs/telegramAutomation');
 
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
@@ -21,6 +22,7 @@ server.listen(PORT, async () => {
   console.log(`Leaderboard backend running on port ${PORT}`);
   scheduleDailyRankJob();
   schedulePriceTickJob();
+  scheduleTelegramAutomation();
   configureTelegramWebhook();
   await startMarketFeed(wss);
 });
