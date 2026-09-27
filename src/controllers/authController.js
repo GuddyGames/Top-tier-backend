@@ -128,7 +128,7 @@ const login = asyncHandler(async (req, res) => {
 });
 
 const googleLogin = asyncHandler(async (req, res) => {
-  const { accessToken } = req.body || {};
+  const { accessToken, referralCode } = req.body || {};
   if (!accessToken) return res.status(400).json({ error: 'Google authentication token is required' });
 
   let googleUser;
@@ -140,15 +140,21 @@ const googleLogin = asyncHandler(async (req, res) => {
 
   let user = await User.findByEmail(email);
   if (!user) {
+    let referrer = null;
+    if (referralCode) referrer = await User.findByReferralCode(String(referralCode).trim().toUpperCase());
     const seed = googleUsername(email, googleUser.user_metadata || {});
     const username = await uniqueUsername(seed);
     const referralCode = generateReferralCode(username);
     const metadata = googleUser.user_metadata || {};
     const displayName = String(metadata.full_name || metadata.name || '').trim();
     const passwordHash = await bcrypt.hash(require('crypto').randomBytes(32).toString('hex'), SALT_ROUNDS);
-    user = await User.create({ username, email, passwordHash, referralCode, referredBy: null, telegramUsername: metadata.telegram_username || null });
+    user = await User.create({ username, email, passwordHash, referralCode, referredBy: referrer ? referrer.id : null, telegramUsername: metadata.telegram_username || null });
     await Activity.log({ userId: user.id, actionType: 'signup_bonus', points: POINTS.signup_bonus, note: 'Signup bonus' });
     await User.addPoints(user.id, POINTS.signup_bonus);
+    if (referrer) {
+      await Activity.log({ userId: referrer.id, actionType: 'referral_bonus', points: POINTS.referral_bonus, note: `Referral bonus for ${username} joining with your referral code` });
+      await User.addPoints(referrer.id, POINTS.referral_bonus);
+    }
     user = await User.findByEmail(email);
     console.log(`[auth] Google account created for ${email}${displayName ? ` (${displayName})` : ''}`);
   }
