@@ -1,7 +1,13 @@
 const cron = require('node-cron');
 const User = require('../models/User');
 const db = require('../config/db');
-const { telegramApi, CHANNEL_USERNAME } = require('../controllers/telegramController');
+const CHANNEL_USERNAME = process.env.TELEGRAM_CHANNEL_USERNAME || '@Toptiertradingchannel';
+const telegramApi = async (method, body) => {
+  const response = await fetch('https://api.telegram.org/bot' + process.env.TELEGRAM_BOT_TOKEN + '/' + method, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const data = await response.json();
+  if (!response.ok || !data.ok) throw new Error(data.description || 'Telegram API request failed');
+  return data.result;
+};
 
 const TIMEZONE = process.env.TELEGRAM_TIMEZONE || 'Africa/Lagos';
 const ADMIN_IDS = () => String(process.env.TELEGRAM_ADMIN_CHAT_IDS || process.env.TELEGRAM_ADMIN_CHAT_ID || '')
