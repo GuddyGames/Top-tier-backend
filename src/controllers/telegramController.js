@@ -5,6 +5,7 @@ const Task = require('../models/Task');
 const TaskSubmission = require('../models/TaskSubmission');
 const Activity = require('../models/Activity');
 const asyncHandler = require('../utils/asyncHandler');
+const { handleChannelMemberUpdate } = require('../jobs/telegramAutomation');
 
 const CHANNEL_USERNAME = process.env.TELEGRAM_CHANNEL_USERNAME || '@Toptiertradingchannel';
 const CHANNEL_URL = `https://t.me/${CHANNEL_USERNAME.replace(/^@/, '')}`;
@@ -139,6 +140,11 @@ const webhook = asyncHandler(async (req, res) => {
     return res.sendStatus(401);
   }
 
+  if (req.body?.chat_member) {
+    await handleChannelMemberUpdate(req.body).catch((error) => console.error('[telegram] channel member automation failed:', error.message));
+    return;
+  }
+
   const message = req.body?.message;
   const text = message?.text || '';
   const match = text.match(/^\/start(?:\s+(.+))?$/);
@@ -266,7 +272,7 @@ async function configureTelegramWebhook() {
     'https://top-tier-backend-sbd5.onrender.com';
   const url = `${baseUrl.replace(/\/+$/, '')}/api/telegram/webhook`;
   try {
-    await telegramApi('setWebhook', { url, secret_token: webhookSecret() });
+    await telegramApi('setWebhook', { url, secret_token: webhookSecret(), allowed_updates: ['message', 'chat_member'] });
     console.log('[telegram] webhook configured');
   } catch (error) {
     console.error('[telegram] webhook setup failed:', error.message);
