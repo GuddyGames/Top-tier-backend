@@ -30,4 +30,14 @@ const acceptPrivacy = asyncHandler(async (req, res) => {
   res.json({ accepted: true, ...updated });
 });
 
+const getNotifications = asyncHandler(async (req,res)=>{
+  const { rows } = await require('../config/db').query('SELECT id,title,message,read_at,created_at FROM notifications WHERE user_id=$1 ORDER BY created_at DESC LIMIT 50',[req.user.id]);
+  res.json({notifications:rows});
+});
+const markNotificationRead = asyncHandler(async (req,res)=>{
+  const { rows } = await require('../config/db').query('UPDATE notifications SET read_at=COALESCE(read_at,NOW()) WHERE id=$1 AND user_id=$2 RETURNING id,read_at',[req.params.id,req.user.id]);
+  if(!rows[0]) return res.status(404).json({error:'Notification not found'});
+  res.json(rows[0]);
+});
+
 module.exports = { getMyProfile, updateMyProfile, updateNotifications, acceptPrivacy };
