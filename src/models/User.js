@@ -45,7 +45,7 @@ const User = {
       `SELECT id, username, email, role, referral_code, telegram_username, status,
               total_contribution, total_points, daily_points, current_streak,
               telegram_verified_at, telegram_user_id,
-              longest_streak, last_active_date, rank, created_at
+              longest_streak, last_active_date, rank, notification_enabled, privacy_accepted_at, privacy_policy_version, created_at
        FROM users WHERE id = $1`,
       [id]
     );
@@ -171,6 +171,28 @@ const User = {
       [userId, telegramUserId, telegramUsername || null, verifiedAt]
     );
     return rows[0] || null;
+  },
+
+
+  async updateProfile(userId, { username, email, telegramUsername }) {
+    const fields = [];
+    const values = [userId];
+    if (username !== undefined) { values.push(username); fields.push(`username = ${values.length}`); }
+    if (email !== undefined) { values.push(email); fields.push(`email = ${values.length}`); }
+    if (telegramUsername !== undefined) { values.push(telegramUsername || null); fields.push(`telegram_username = ${values.length}`); }
+    if (!fields.length) return User.findById(userId);
+    const { rows } = await db.query(`UPDATE users SET ${fields.join(', ')} WHERE id = $1 RETURNING id, username, email, telegram_username`, values);
+    return rows[0];
+  },
+
+  async setNotificationEnabled(userId, enabled) {
+    const { rows } = await db.query('UPDATE users SET notification_enabled = $2 WHERE id = $1 RETURNING notification_enabled', [userId, enabled]);
+    return rows[0];
+  },
+
+  async acceptPrivacy(userId, version) {
+    const { rows } = await db.query('UPDATE users SET privacy_accepted_at = NOW(), privacy_policy_version = $2 WHERE id = $1 RETURNING privacy_accepted_at, privacy_policy_version', [userId, version]);
+    return rows[0];
   },
 
   async updateTelegramUsername(userId, telegramUsername) {
