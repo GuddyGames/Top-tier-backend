@@ -16,7 +16,7 @@ const ADMIN_IDS = () => String(process.env.TELEGRAM_ADMIN_CHAT_IDS || process.en
   .filter(Boolean);
 
 const RISK_DISCLOSURE =
-  '⚠️ RISK DISCLOSURE\nTrading involves substantial risk of loss. Demo results are not real profits and do not guarantee future results. Never trade money you cannot afford to lose. Top-Tier does not provide financial advice.';
+  '⚠️ RISK DISCLOSURE\nTrading involves substantial risk of loss. Demo results are not real profits and do not guarantee future results. Never trade money you cannot afford to lose.';
 
 async function sendToAdmins(text) {
   const ids = ADMIN_IDS();
