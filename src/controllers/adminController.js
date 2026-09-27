@@ -227,6 +227,16 @@ const listSupportConversations = asyncHandler(async (req,res)=>{
   res.json({conversations:rows});
 });
 
+
+const sendNotification = asyncHandler(async (req,res)=>{
+  const title=String(req.body.title||'').trim();
+  const message=String(req.body.message||'').trim();
+  if(!title||!message) return res.status(400).json({error:'title and message are required'});
+  if(title.length>150||message.length>2000) return res.status(400).json({error:'Notification is too long'});
+  const result=await db.query('INSERT INTO notifications (user_id,title,message) SELECT id,$1,$2 FROM users WHERE status=\'active\' RETURNING id',[title,message]);
+  res.status(201).json({sent_to:result.rowCount});
+});
+
 module.exports = {
   listUsers,
   listReferrals,
@@ -242,4 +252,5 @@ module.exports = {
   listAdminSubmissions,
   getOutstandingTasks,
   listSupportConversations,
+  sendNotification,
 };
