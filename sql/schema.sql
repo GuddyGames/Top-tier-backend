@@ -70,6 +70,11 @@ CREATE TABLE IF NOT EXISTS telegram_welcomes (
     telegram_username VARCHAR(255),
     welcomed_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+CREATE TABLE IF NOT EXISTS telegram_automation_logs (
+    job_key VARCHAR(150) PRIMARY KEY,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_tasks_type_active_date ON tasks(task_type, is_active, task_date);
 
 -- A user's claim that they completed a task. Social actions (likes, comments,
