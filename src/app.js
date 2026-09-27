@@ -12,6 +12,7 @@ const profileRoutes = require('./routes/profileRoutes');
 const demoRoutes = require('./routes/demoRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const telegramRoutes = require('./routes/telegramRoutes');
+const supportRoutes = require('./routes/supportRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -53,6 +54,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/demo', demoRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/telegram', telegramRoutes);
+app.use('/api/support', supportRoutes);
 
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
 app.use(errorHandler);
