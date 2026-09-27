@@ -40,4 +40,4 @@ const markNotificationRead = asyncHandler(async (req,res)=>{
   res.json(rows[0]);
 });
 
-module.exports = { getMyProfile, updateMyProfile, updateNotifications, acceptPrivacy };
+module.exports = { getMyProfile, updateMyProfile, updateNotifications, acceptPrivacy, getNotifications, markNotificationRead };
