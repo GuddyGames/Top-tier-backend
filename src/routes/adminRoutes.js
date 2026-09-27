@@ -14,6 +14,7 @@ const {
   listAdminSubmissions,
   getOutstandingTasks,
   listSupportConversations,
+  sendNotification,
 } = require('../controllers/adminController');
 const { listSubmissions } = require('../controllers/taskController'); // re-exposed under /admin for a single control room
 const { requireAuth, requireAdmin } = require('../middleware/auth');
@@ -40,6 +41,7 @@ router.get('/tasks/pending', getPendingSubmissions);
 router.get('/submissions', listAdminSubmissions);
 router.get('/tasks/outstanding', getOutstandingTasks);
 router.get('/support', listSupportConversations);
+router.post('/notifications', sendNotification);
 router.get('/activity', getGlobalActivity);
 router.get('/trades', getGlobalTrades);
 
