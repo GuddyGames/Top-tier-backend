@@ -221,6 +221,12 @@ const listReferrals = asyncHandler(async (req, res) => {
   res.json({ referrals: rows });
 });
 
+
+const listSupportConversations = asyncHandler(async (req,res)=>{
+  const { rows } = await db.query(`SELECT c.id,c.user_id,u.username,u.email,c.status,c.updated_at,c.created_at,(SELECT message FROM support_messages m WHERE m.conversation_id=c.id ORDER BY m.created_at DESC LIMIT 1) AS last_message FROM support_conversations c JOIN users u ON u.id=c.user_id ORDER BY c.updated_at DESC`);
+  res.json({conversations:rows});
+});
+
 module.exports = {
   listUsers,
   listReferrals,
@@ -235,4 +241,5 @@ module.exports = {
   getPendingSubmissions,
   listAdminSubmissions,
   getOutstandingTasks,
+  listSupportConversations,
 };
