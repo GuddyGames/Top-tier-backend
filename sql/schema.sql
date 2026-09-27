@@ -165,3 +165,36 @@ CREATE INDEX IF NOT EXISTS idx_users_referred_by ON users(referred_by);
 CREATE INDEX IF NOT EXISTS idx_snapshots_date ON leaderboard_snapshots(snapshot_date);
 CREATE INDEX IF NOT EXISTS idx_task_submissions_task ON task_submissions(task_id);
 CREATE INDEX IF NOT EXISTS idx_task_submissions_user ON task_submissions(user_id);
+
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS notification_enabled BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS privacy_accepted_at TIMESTAMP;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS privacy_policy_version VARCHAR(20);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(150) NOT NULL,
+    message TEXT NOT NULL,
+    read_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS support_conversations (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(20) NOT NULL DEFAULT 'open',
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS support_messages (
+    id SERIAL PRIMARY KEY,
+    conversation_id INTEGER NOT NULL REFERENCES support_conversations(id) ON DELETE CASCADE,
+    sender_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_created ON notifications(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_support_messages_conversation ON support_messages(conversation_id, created_at);
