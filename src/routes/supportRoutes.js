@@ -1,0 +1,10 @@
+const express=require('express');
+const {requireAuth,requireAdmin}=require('../middleware/auth');
+const {getMySupport,sendSupportMessage,listSupport,getSupport,replySupport}=require('../controllers/supportController');
+const router=express.Router();
+router.get('/me',requireAuth,getMySupport);
+router.post('/me/messages',requireAuth,sendSupportMessage);
+router.get('/admin',requireAuth,requireAdmin,listSupport);
+router.get('/admin/:id',requireAuth,requireAdmin,getSupport);
+router.post('/admin/:id/messages',requireAuth,requireAdmin,replySupport);
+module.exports=router;
