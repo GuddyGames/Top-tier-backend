@@ -48,7 +48,7 @@ async function postGoodMorning() {
 
   await telegramApi('sendMessage', {
     chat_id: CHANNEL_USERNAME,
-    text: '🌅 Good morning, Top-Tier family!\n\nA new day is here. Complete your tasks, build your points and keep climbing the leaderboard. Have a productive day! 🚀',
+    text: '🌅 Good morning, Top-Tier family!\n\nA new day is here. Have a productive day! 🚀',
   });
   console.log('[telegramAutomation] good morning posted');
 }
