@@ -101,7 +101,14 @@ async function handleChannelMemberUpdate(update) {
   const displayName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'there';
 
   const welcome = `🎉 Welcome ${displayName}!${username}\n\nWelcome to Top-Tier! We're glad to have you here. Complete tasks, earn points and practise with the demo terminal.\n\n${RISK_DISCLOSURE}`;
-  await telegramApi('sendMessage', { chat_id: member.chat.id, text: welcome });
+  // Send the welcome only to the new member's private chat.
+  // Telegram bots cannot initiate a private chat with a user who has never opened the bot.
+  // Therefore this succeeds only when the member has already started the bot.
+  try {
+    await telegramApi('sendMessage', { chat_id: user.id, text: welcome });
+  } catch (error) {
+    console.warn(`[telegramAutomation] could not DM new member ${user.id}: ${error.message}`);
+  }
 
   await sendToAdmins(
     `👤 New Top-Tier channel member\n\nName: ${displayName}\nTelegram: ${username || 'No username'}\nTelegram ID: ${user.id}\nChannel: ${member.chat.title || CHANNEL_USERNAME}`
