@@ -19,25 +19,44 @@ const app = express();
 
 app.use(helmet());
 
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
-  .split(',')
-  .map((o) => o.trim())
+// Keep CORS deployment-friendly: exact origins remain the secure default, while
+// aliases and an optional regex allow Blue/Green Vercel deployments without code changes.
+const configuredOrigins = [
+  process.env.ALLOWED_ORIGINS || '',
+  process.env.FRONTEND_URLS || '',
+  process.env.FRONTEND_URL || '',
+  process.env.CORS_ALLOWED_ORIGINS || '',
+]
+  .flatMap((value) => String(value).split(','))
+  .map((o) => o.trim().replace(/\/$/, ''))
   .filter(Boolean);
 
-if (allowedOrigins.length === 0 && process.env.NODE_ENV === 'production') {
-  // Fail closed in production: an unset ALLOWED_ORIGINS should block
-  // cross-origin requests, not silently open them to everyone.
-  console.warn('[app] ALLOWED_ORIGINS is not set — cross-origin requests will be blocked.');
+const allowedOrigins = [...new Set(configuredOrigins)];
+let allowedOriginRegex = null;
+if (process.env.ALLOWED_ORIGIN_REGEX) {
+  try {
+    allowedOriginRegex = new RegExp(process.env.ALLOWED_ORIGIN_REGEX);
+  } catch (error) {
+    console.error('[app] Invalid ALLOWED_ORIGIN_REGEX; ignoring it:', error.message);
+  }
+}
+
+if (allowedOrigins.length === 0 && !allowedOriginRegex && process.env.NODE_ENV === 'production') {
+  console.warn('[app] No production CORS origin configured — cross-origin requests will be blocked.');
 }
 
 app.use(
   cors({
-    origin:
-      allowedOrigins.length > 0
-        ? allowedOrigins
-        : process.env.NODE_ENV === 'production'
-          ? false // block all cross-origin requests until ALLOWED_ORIGINS is configured
-          : '*', // permissive only in local development
+    origin(origin, callback) {
+      // Non-browser/server-to-server requests normally have no Origin header.
+      if (!origin) return callback(null, true);
+      const normalizedOrigin = origin.replace(/\/$/, '');
+      const allowed = allowedOrigins.includes(normalizedOrigin)
+        || (allowedOriginRegex && allowedOriginRegex.test(normalizedOrigin));
+
+      if (allowed) return callback(null, true);
+      return callback(new Error('CORS origin not allowed'));
+    },
   })
 );
 app.use(express.json({ limit: '100kb' }));
