@@ -1,9 +1,6 @@
 const rateLimit = require('express-rate-limit');
 
-// Signup/login are the endpoints worth protecting most — without this,
-// nothing stops repeated password guesses against one account or a
-// script spamming fake signups. 20 attempts per 15 minutes per IP is
-// generous for a real user, tight for a script.
+// Signup/login protection: 20 attempts per 15 minutes per IP.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
@@ -12,4 +9,15 @@ const authLimiter = rateLimit({
   message: { error: 'Too many attempts — try again in a few minutes' },
 });
 
-module.exports = { authLimiter };
+// Market analysis calls consume the shared Twelve Data quota. Authenticate
+// first, then limit each Top-tier account to 10 analyses per minute.
+const parallaxAnalysisLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  keyGenerator: (req) => String(req.user.id),
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Parallax analysis limit reached. Please wait a minute and try again.' },
+});
+
+module.exports = { authLimiter, parallaxAnalysisLimiter };
