@@ -1,6 +1,7 @@
 const express = require("express");
 const db = require("../config/db");
 const { requireAuth } = require("../middleware/auth");
+const { parallaxAnalysisLimiter } = require("../middleware/rateLimiters");
 const { analyzeMarket, MarketDataError, TIMEFRAMES } = require("../services/parallaxAnalysis");
 
 const router = express.Router();
@@ -17,7 +18,7 @@ router.get("/access", async (req, res) => {
   }
 });
 
-router.get("/analyze", async (req, res) => {
+router.get("/analyze", parallaxAnalysisLimiter, async (req, res) => {
   const symbol = String(req.query.symbol || "EUR/USD").toUpperCase();
   const timeframe = String(req.query.timeframe || "M15").toUpperCase();
   const outputsize = Number(req.query.outputsize || 120);
