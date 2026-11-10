@@ -205,3 +205,34 @@ src/
 └── utils/                Validators, streak math, async wrapper
 sql/schema.sql            Table definitions
 ```
+
+
+## Parallax Intelligence module
+
+Parallax is integrated into this API and uses the existing Top-tier JWT identity and PostgreSQL connection. It has its own tables and does not read or modify Top-tier points, contributions, wallet balances, or demo-trading records.
+
+### Configure market data
+
+Set `TWELVE_DATA_API_KEY` as a **server-side Render environment variable**. Never add it to the Vite frontend or commit a real key. The provider's Forex feed is composite/reference data and can differ from an Exness executable quote. Availability and request limits depend on the provider plan.
+
+### Apply database changes
+
+The standard migration now applies both `sql/schema.sql` and `sql/parallax.sql`:
+
+```bash
+npm run migrate
+```
+
+This adds a `parallax_plan` column (default `free`) and a separate `parallax_signal_history` table. Existing users remain on the free plan. The premium plan currently has to be assigned by an authorized database administrator; subscription billing and automated entitlement changes are not yet connected.
+
+### API
+
+All Parallax endpoints require the existing Top-tier Bearer JWT:
+
+- `GET /api/parallax/access`
+- `GET /api/parallax/analyze?symbol=EUR/USD&timeframe=M15&outputsize=120`
+- `GET /api/parallax/history`
+
+Free access currently includes M15 and H1 with up to 120 candles. Premium access unlocks the other supported timeframes and up to 500 candles. These are initial feature gates, not a payment/subscription system.
+
+**Safety:** analysis is experimental and returns BUY/SELL/WAIT candidates only. Live broker execution is disabled. Do not treat any signal as a guaranteed outcome or an instruction to risk real funds.
