@@ -213,7 +213,7 @@ Parallax is integrated into this API and uses the existing Top-tier JWT identity
 
 ### Configure market data
 
-Set `TWELVE_DATA_API_KEY` as a **server-side Render environment variable**. Never add it to the Vite frontend or commit a real key. The provider's Forex feed is composite/reference data and can differ from an Exness executable quote. Availability and request limits depend on the provider plan.
+Parallax reuses the existing server-side `TWELVE_DATA_API_KEY` already used by Top-tier's `src/services/marketFeed.js` WebSocket feed. Do not create a second key or expose it as a Vite variable. If the existing Render variable is present, no new market-data secret is needed. The provider's Forex feed is composite/reference data and can differ from an Exness executable quote. Availability and request limits depend on the provider plan.
 
 ### Apply database changes
 
