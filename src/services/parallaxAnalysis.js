@@ -48,7 +48,7 @@ async function analyzeMarket({ symbol, timeframe, outputsize = 120 }) {
     throw new MarketDataError("Candle count must be between 60 and 500.", 400);
   }
   const key = process.env.TWELVE_DATA_API_KEY;
-  if (!key) throw new MarketDataError("Market data is not configured. Add TWELVE_DATA_API_KEY to the backend environment.", 503);
+  if (!key) throw new MarketDataError("Top-tier market data is unavailable because its existing Twelve Data server credential is not configured.", 503);
 
   const url = new URL("https://api.twelvedata.com/time_series");
   url.searchParams.set("symbol", symbol);
