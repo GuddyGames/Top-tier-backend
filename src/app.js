@@ -13,7 +13,6 @@ const demoRoutes = require('./routes/demoRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const telegramRoutes = require('./routes/telegramRoutes');
 const supportRoutes = require('./routes/supportRoutes');
-const parallaxRoutes = require('./routes/parallaxRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -75,7 +74,6 @@ app.use('/api/demo', demoRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/telegram', telegramRoutes);
 app.use('/api/support', supportRoutes);
-app.use('/api/parallax', parallaxRoutes);
 
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
 app.use(errorHandler);
